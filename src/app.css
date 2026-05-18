@@ -94,10 +94,18 @@ body {
 
 .cards-grid {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding: 8px 0;
+  width: 100%;
+}
+
+.cards-row {
+  display: flex;
   flex-wrap: nowrap;
   justify-content: center;
   gap: 24px;
-  padding: 8px 0;
   width: 100%;
 }
 
@@ -114,6 +122,9 @@ body {
 
 @media (max-width: 600px) {
   .cards-grid {
+    gap: 20px;
+  }
+  .cards-row {
     gap: 12px;
   }
   .card-slot {

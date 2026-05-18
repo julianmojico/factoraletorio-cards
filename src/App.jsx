@@ -49,8 +49,8 @@ function launchConfetti() {
 
 // Configurable sequences of cards (1-based indices matching cards.json elements)
 const SEQUENCES = [
-  [1, 2, 3, 4],
-  [4, 3, 2, 1]
+  [1, 2, 3, 4, 1],
+  [4, 3, 2, 1, 4]
 ]
 
 function playSequenceStartSound() {
@@ -68,6 +68,7 @@ export default function App() {
   // Sequence state
   const [sequenceIndex, setSequenceIndex] = useState(0)
   const [currentStep, setCurrentStep] = useState(0)
+  const [chosenBranch, setChosenBranch] = useState(null)
 
   const sectionRef = useRef(null)
   const gridRef = useRef(null)
@@ -115,35 +116,82 @@ export default function App() {
   // ── Card click handler (per-card) ──────────────────────────────────────────
   function handleCardClick(i) {
     const currentSeq = SEQUENCES[sequenceIndex]
-    const activeCardIndex = currentSeq[currentStep] - 1
+    
+    // Step 0: Click first card
+    if (currentStep === 0) {
+      const firstCardIndex = currentSeq[0] - 1
+      if (i === firstCardIndex && cardStates[i]?.flipped) {
+        // Flip card face-up
+        setCardStates(prev => {
+          const next = [...prev]
+          next[i] = { ...next[i], flipped: false }
+          return next
+        })
 
-    // Progression only occurs if user clicks the next face-down card in sequence
-    if (i === activeCardIndex && cardStates[i]?.flipped) {
-      // 1. Flip card face-up
-      setCardStates(prev => {
-        const next = [...prev]
-        next[i] = { ...next[i], flipped: false }
-        return next
-      })
-
-      const isLastStep = currentStep === currentSeq.length - 1
-
-      if (!isLastStep) {
-        // 2a. Progression step: reveal next card in sequence after a short delay
+        // Reveal both Row 2 cards after a short delay
         setTimeout(() => {
-          const nextStep = currentStep + 1
-          const nextCardIndex = currentSeq[nextStep] - 1
-
-          setCurrentStep(nextStep)
+          const leftIdx = currentSeq[1] - 1
+          const rightIdx = currentSeq[2] - 1
+          
+          setCurrentStep(1)
           setCardStates(prev => {
             const next = [...prev]
-            next[nextCardIndex] = { revealed: true, flipped: true }
+            next[leftIdx] = { revealed: true, flipped: true }
+            next[rightIdx] = { revealed: true, flipped: true }
             return next
           })
 
-          // Staggered entry animation for the new slot
+          // Staggered entry animation for the two new slots
           requestAnimationFrame(() => {
-            const slot = gridRef.current?.querySelector(`.card-slot-${nextCardIndex}`)
+            const slotL = gridRef.current?.querySelector(`.card-slot-${leftIdx}`)
+            const slotR = gridRef.current?.querySelector(`.card-slot-${rightIdx}`)
+            if (slotL) {
+              gsap.fromTo(slotL,
+                { autoAlpha: 0, y: 50, scale: 0.92 },
+                { autoAlpha: 1, y: 0, scale: 1, duration: 1.2, ease: 'back.out(0.8)' }
+              )
+            }
+            if (slotR) {
+              gsap.fromTo(slotR,
+                { autoAlpha: 0, y: 50, scale: 0.92 },
+                { autoAlpha: 1, y: 0, scale: 1, duration: 1.2, ease: 'back.out(0.8)' }
+              )
+            }
+          })
+        }, 700)
+      }
+    }
+    // Step 1: Click one of the two middle cards
+    else if (currentStep === 1) {
+      const leftIdx = currentSeq[1] - 1
+      const rightIdx = currentSeq[2] - 1
+
+      if ((i === leftIdx || i === rightIdx) && cardStates[i]?.flipped) {
+        const branch = i === leftIdx ? 'left' : 'right'
+        setChosenBranch(branch)
+
+        // Flip the chosen card face-up
+        setCardStates(prev => {
+          const next = [...prev]
+          next[i] = { ...next[i], flipped: false }
+          return next
+        })
+
+        // Reveal the corresponding final card after a short delay
+        setTimeout(() => {
+          const finalCardNum = branch === 'left' ? currentSeq[3] : currentSeq[4]
+          const finalIdx = finalCardNum - 1
+
+          setCurrentStep(2)
+          setCardStates(prev => {
+            const next = [...prev]
+            next[finalIdx] = { revealed: true, flipped: true }
+            return next
+          })
+
+          // Staggered entry animation for the final slot
+          requestAnimationFrame(() => {
+            const slot = gridRef.current?.querySelector(`.card-slot-${finalIdx}`)
             if (slot) {
               gsap.fromTo(slot,
                 { autoAlpha: 0, y: 50, scale: 0.92 },
@@ -152,8 +200,22 @@ export default function App() {
             }
           })
         }, 700)
-      } else {
-        // 2b. Sequence finalization: launch confetti & transition to next sequence
+      }
+    }
+    // Step 2: Click the final card
+    else if (currentStep === 2) {
+      const finalCardNum = chosenBranch === 'left' ? currentSeq[3] : currentSeq[4]
+      const finalIdx = finalCardNum - 1
+
+      if (i === finalIdx && cardStates[i]?.flipped) {
+        // Flip final card face-up
+        setCardStates(prev => {
+          const next = [...prev]
+          next[i] = { ...next[i], flipped: false }
+          return next
+        })
+
+        // Launch confetti & transition to next sequence
         launchConfetti()
         setTimeout(() => {
           triggerFlyOutAndNextSequence()
@@ -176,6 +238,9 @@ export default function App() {
         onComplete: () => {
           // Play sequence start sound for the new sequence!
           playSequenceStartSound()
+
+          // Reset branch selection state
+          setChosenBranch(null)
 
           // Advance sequence index
           const nextSeqIndex = (sequenceIndex + 1) % SEQUENCES.length
@@ -218,6 +283,48 @@ export default function App() {
   const currentSeq = SEQUENCES[sequenceIndex]
   const btnLabel = isLoading ? 'Cargando...' : stage > 0 ? '¡Éstas son tus cartas!' : 'Revela tus cartas.'
 
+  function renderCardRow(cardNums, rowClass = '') {
+    return (
+      <div className={`cards-row ${rowClass}`}>
+        {cardNums.map((cardNum) => {
+          const i = cardNum - 1
+          const card = cards[i]
+          if (!card || !cardStates[i]?.revealed) return null
+
+          // Disable click if it's the unchosen branch in Row 2
+          const isRow2 = currentSeq[1] === cardNum || currentSeq[2] === cardNum
+          const isUnchosen = isRow2 && chosenBranch && (
+            (chosenBranch === 'left' && currentSeq[2] === cardNum) ||
+            (chosenBranch === 'right' && currentSeq[1] === cardNum)
+          )
+
+          return (
+            <div
+              key={card.id}
+              className={`card-slot card-slot-${i}`}
+              style={{ position: 'relative', zIndex: 1 }}
+            >
+              <CardProxy
+                id={card.id}
+                name={card.name}
+                set={card.set}
+                number={card.number}
+                types={card.types}
+                supertype={card.supertype}
+                subtypes={card.subtypes}
+                rarity={card.rarity}
+                isReverse={card.isReverse}
+                img={card.images.large}
+                flipped={cardStates[i].flipped}
+                onCardClick={() => !isUnchosen && handleCardClick(i)}
+              />
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <main className="page-container">
       <div className="noise-overlay" />
@@ -245,33 +352,15 @@ export default function App() {
         style={{ visibility: stage > 0 ? 'visible' : 'hidden', height: stage > 0 ? 'auto' : 0, overflow: stage > 0 ? 'visible' : 'hidden' }}
       >
         <div className="cards-grid" ref={gridRef}>
-          {currentSeq.map((cardNum) => {
-            const i = cardNum - 1
-            const card = cards[i]
-            if (!card || !cardStates[i]?.revealed) return null
-            return (
-              <div
-                key={card.id}
-                className={`card-slot card-slot-${i}`}
-                style={{ position: 'relative', zIndex: 1 }}
-              >
-                <CardProxy
-                  id={card.id}
-                  name={card.name}
-                  set={card.set}
-                  number={card.number}
-                  types={card.types}
-                  supertype={card.supertype}
-                  subtypes={card.subtypes}
-                  rarity={card.rarity}
-                  isReverse={card.isReverse}
-                  img={card.images.large}
-                  flipped={cardStates[i].flipped}
-                  onCardClick={() => handleCardClick(i)}
-                />
-              </div>
-            )
-          })}
+          {/* Row 1: First Card */}
+          {renderCardRow([currentSeq[0]], 'row-1')}
+
+          {/* Row 2: Two Cards */}
+          {renderCardRow([currentSeq[1], currentSeq[2]], 'row-2')}
+
+          {/* Row 3: Branch final card */}
+          {chosenBranch === 'left' && renderCardRow([currentSeq[3]], 'row-3')}
+          {chosenBranch === 'right' && renderCardRow([currentSeq[4]], 'row-3')}
         </div>
       </section>
     </main>
