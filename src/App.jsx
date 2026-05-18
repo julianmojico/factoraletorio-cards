@@ -56,8 +56,9 @@ const CardType = {
 
 // Configurable sequences of cards (indices matching CardType elements)
 const SEQUENCES = [
-  [1, 2, 3, 4, 1],
-  [4, 3, 2, 1, 4]
+  [CardType.RAYO, CardType.OJO, CardType.CORONA],
+  [CardType.ESTRELLA, CardType.RAYO, CardType.OJO],
+  [CardType.OJO, CardType.ESTRELLA, CardType.CORONA]
 ]
 
 function playSequenceStartSound() {
@@ -78,21 +79,22 @@ function playMarioWinsSound() {
   audio.play().catch(err => console.warn('Audio playback blocked or failed:', err))
 }
 
+function playDjStopSound() {
+  const audio = new Audio('/dj-stop.mp3')
+  audio.volume = 0.5
+  audio.play().catch(err => console.warn('Audio playback blocked or failed:', err))
+}
+
 export default function App() {
   const [cards, setCards] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [stage, setStage] = useState(0) // 0 -> idle, 1 -> playing
-  const [slotStates, setSlotStates] = useState([
-    { revealed: false, flipped: true },
-    { revealed: false, flipped: true },
-    { revealed: false, flipped: true },
-    { revealed: false, flipped: true }
-  ])
+  const [slotStates, setSlotStates] = useState(['hidden', 'hidden', 'hidden'])
 
   // Sequence state
   const [selectedSequenceIndex, setSelectedSequenceIndex] = useState(null)
   const [currentStep, setCurrentStep] = useState(0)
-  const [chosenBranch, setChosenBranch] = useState(null)
+  const [isVictorious, setIsVictorious] = useState(false)
 
   const sectionRef = useRef(null)
   const gridRef = useRef(null)
@@ -111,17 +113,11 @@ export default function App() {
   function handleReveal() {
     playSequenceStartSound()
     setStage(1)
-
+    setIsVictorious(false)
     setSelectedSequenceIndex(null)
     setCurrentStep(0)
-    setChosenBranch(null)
 
-    setSlotStates([
-      { revealed: true, flipped: false }, // slot 0 used for chosen seq
-      { revealed: false, flipped: true },
-      { revealed: false, flipped: true },
-      { revealed: false, flipped: true }
-    ])
+    setSlotStates(['faceup', 'hidden', 'hidden'])
 
     // Animate cards section into view
     requestAnimationFrame(() => {
@@ -160,23 +156,12 @@ export default function App() {
     audio.volume = 0.4
     audio.play().catch(err => console.warn('Audio blocked:', err))
 
-    // Set slot 0 to be the chosen card, revealed and face-up
-    setSlotStates([
-      { revealed: true, flipped: false },
-      { revealed: false, flipped: true },
-      { revealed: false, flipped: true },
-      { revealed: false, flipped: true }
-    ])
+    setSlotStates(['faceup', 'hidden', 'hidden'])
 
     // Reveal both Row 2 cards after a short delay
     setTimeout(() => {
       setCurrentStep(1)
-      setSlotStates(prev => {
-        const next = [...prev]
-        next[1] = { revealed: true, flipped: true }
-        next[2] = { revealed: true, flipped: true }
-        return next
-      })
+      setSlotStates(['faceup', 'facedown', 'facedown'])
 
       // Staggered entry animation for the two new slots
       requestAnimationFrame(() => {
@@ -203,63 +188,41 @@ export default function App() {
   function handleSlotClick(slotIdx) {
     if (selectedSequenceIndex === null) return
     const currentSeq = SEQUENCES[selectedSequenceIndex]
+    const isLeftFirst = selectedSequenceIndex % 2 === 0
 
-    // Step 1: Click one of the two middle cards
-    if (currentStep === 1 && (slotIdx === 1 || slotIdx === 2) && slotStates[slotIdx].flipped) {
-      const branch = slotIdx === 1 ? 'left' : 'right'
-      setChosenBranch(branch)
+    if (currentStep === 1 && (slotIdx === 1 || slotIdx === 2) && slotStates[slotIdx] === 'facedown') {
+      const trapSlot = isLeftFirst ? 1 : 2
 
-      // Flip the chosen card face-up
+      // Lock further clicks during the timeout!
+      setCurrentStep(2)
+
       setSlotStates(prev => {
         const next = [...prev]
-        next[slotIdx] = { ...next[slotIdx], flipped: false }
+        next[slotIdx] = 'faceup'
         return next
       })
 
-      // Reveal the corresponding final card after a short delay
-      setTimeout(() => {
-        setCurrentStep(2)
-        setSlotStates(prev => {
-          const next = [...prev]
-          next[3] = { revealed: true, flipped: true }
-          return next
-        })
-
-        // Staggered entry animation for the final slot
-        requestAnimationFrame(() => {
-          const slot = gridRef.current?.querySelector(`.card-slot-3`)
-          if (slot) {
-            slot.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            gsap.fromTo(slot,
-              { autoAlpha: 0, y: 50, scale: 0.92 },
-              { autoAlpha: 1, y: 0, scale: 1, duration: 1.2, ease: 'back.out(0.8)' }
-            )
-          }
-        })
-      }, 700)
-    }
-    // Step 2: Click the final card
-    else if (currentStep === 2 && slotIdx === 3 && slotStates[3].flipped) {
-      // Flip final card face-up
-      setSlotStates(prev => {
-        const next = [...prev]
-        next[3] = { ...next[3], flipped: false }
-        return next
-      })
-
-      const finalCardNum = chosenBranch === 'left' ? currentSeq[3] : currentSeq[4]
-
-      if (finalCardNum === CardType.CORONA) {
-        // Launch confetti & transition to next sequence
-        playMarioWinsSound()
-        launchConfetti()
-      } else {
-        playDoorUnlockSound()
+      if (slotIdx === trapSlot) {
+        // They clicked the second card of the array! Play DJ-STOP and restart!
+        playDjStopSound()
+        setTimeout(() => {
+          triggerFlyOutAndNextSequence()
+        }, 1500)
+        return
       }
 
-      setTimeout(() => {
-        triggerFlyOutAndNextSequence()
-      }, 1500)
+      // They clicked the last card of the array!
+      const finalCard = currentSeq[2]
+      if (finalCard === CardType.CORONA) {
+        playMarioWinsSound()
+        launchConfetti()
+        setIsVictorious(true)
+      } else {
+        playDoorUnlockSound()
+        setTimeout(() => {
+          triggerFlyOutAndNextSequence()
+        }, 1500)
+      }
     }
   }
 
@@ -275,23 +238,14 @@ export default function App() {
         ease: 'power3.in',
         pointerEvents: 'none',
         onComplete: () => {
-          // Play sequence start sound for the new sequence!
           playSequenceStartSound()
 
-          // Reset selection state
-          setChosenBranch(null)
           setSelectedSequenceIndex(null)
           setCurrentStep(0)
+          setIsVictorious(false)
 
-          // Reset slot states
-          setSlotStates([
-            { revealed: true, flipped: false },
-            { revealed: false, flipped: true },
-            { revealed: false, flipped: true },
-            { revealed: false, flipped: true }
-          ])
+          setSlotStates(['faceup', 'hidden', 'hidden'])
 
-          // Reset grid properties
           gsap.set(gridRef.current, {
             y: 0,
             scale: 1,
@@ -300,7 +254,6 @@ export default function App() {
             pointerEvents: 'auto',
           })
 
-          // Staggered entry animation for the starting cards again
           requestAnimationFrame(() => {
             const uniqueStartCards = Array.from(new Set(SEQUENCES.map(seq => seq[0])))
             uniqueStartCards.forEach((cardNum) => {
@@ -318,13 +271,23 @@ export default function App() {
     }
   }
 
+  function handleReset() {
+    setIsVictorious(false)
+    setStage(0)
+    setSelectedSequenceIndex(null)
+    setCurrentStep(0)
+    setSlotStates(['hidden', 'hidden', 'hidden'])
+  }
+
   const currentSeq = selectedSequenceIndex !== null ? SEQUENCES[selectedSequenceIndex] : null
   const btnLabel = isLoading ? 'Cargando...' : stage > 0 ? '¡Éstas son tus cartas!' : 'Revela tus cartas.'
+  const isLeftFirst = selectedSequenceIndex !== null ? selectedSequenceIndex % 2 === 0 : true
+  const coronaCard = cards[CardType.CORONA - 1]
 
   function renderSlot(slotIdx, cardNum, isUnchosen = false) {
     const card = cards[cardNum - 1]
     const state = slotStates[slotIdx]
-    if (!card || !state || !state.revealed) return null
+    if (!card || state === 'hidden') return null
 
     return (
       <div
@@ -343,7 +306,7 @@ export default function App() {
           rarity={card.rarity}
           isReverse={card.isReverse}
           img={card.images.large}
-          flipped={state.flipped}
+          flipped={state === 'facedown'}
           onCardClick={() => !isUnchosen && handleSlotClick(slotIdx)}
         />
       </div>
@@ -358,78 +321,109 @@ export default function App() {
         <div className="logo-container">
           <img src="thumb.png" alt="Logo Factor Aleatorio" className="logo-img" />
         </div>
-        <h1 className="main-title">Pedí ayuda al Oráculo. O no.</h1>
+        <h1 className={`main-title ${isVictorious ? 'victory-title' : ''}`}>
+          {isVictorious ? 'Encontraste el camino' : 'Pedí ayuda al Oráculo. O no...'}
+        </h1>
         <div className="btn-container">
-          <button
-            className="gradient-btn"
-            onClick={handleReveal}
-            disabled={stage > 0 || isLoading}
-          >
-            {btnLabel}
-          </button>
+          {isVictorious ? (
+            <button
+              className="gradient-btn"
+              onClick={handleReset}
+            >
+              Volver a empezar
+            </button>
+          ) : (
+            <button
+              className="gradient-btn"
+              onClick={handleReveal}
+              disabled={stage > 0 || isLoading}
+            >
+              {btnLabel}
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Cards section — hidden until stage > 0 */}
-      <section
-        ref={sectionRef}
-        className="cards-section"
-        style={{ visibility: stage > 0 ? 'visible' : 'hidden', height: stage > 0 ? 'auto' : 0, overflow: stage > 0 ? 'visible' : 'hidden' }}
-      >
-        <div className="cards-grid" ref={gridRef}>
-          {/* Row 1: Starting Cards or Selected First Card */}
-          {selectedSequenceIndex === null ? (
-            <div className="cards-row row-1">
-              {Array.from(new Set(SEQUENCES.map(seq => seq[0]))).map((cardNum, idx) => {
-                const card = cards[cardNum - 1]
-                if (!card) return null
-                return (
-                  <div
-                    key={`start-${idx}`}
-                    className={`card-slot card-start-${cardNum}`}
-                    style={{ position: 'relative', zIndex: 1 }}
-                  >
-                    <CardProxy
-                      id={card.id}
-                      name={card.name}
-                      set={card.set}
-                      number={card.number}
-                      types={card.types}
-                      supertype={card.supertype}
-                      subtypes={card.subtypes}
-                      rarity={card.rarity}
-                      isReverse={card.isReverse}
-                      img={card.images.large}
-                      flipped={false}
-                      onCardClick={() => handleStartCardClick(cardNum)}
-                    />
-                  </div>
-                )
-              })}
+      {stage > 0 && (
+        <section
+          ref={sectionRef}
+          className="cards-section"
+          style={{ visibility: 'visible', height: 'auto', overflow: 'visible' }}
+        >
+          {isVictorious ? (
+            <div className="victory-container" style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '2rem 0' }}>
+              <div className="card-slot card-slot-victory" style={{ position: 'relative', zIndex: 10, filter: 'drop-shadow(0 0 35px rgba(255, 215, 0, 0.6))' }}>
+                {coronaCard && (
+                  <CardProxy
+                    id={coronaCard.id}
+                    name={coronaCard.name}
+                    set={coronaCard.set}
+                    number={coronaCard.number}
+                    types={coronaCard.types}
+                    supertype={coronaCard.supertype}
+                    subtypes={coronaCard.subtypes}
+                    rarity={coronaCard.rarity}
+                    isReverse={coronaCard.isReverse}
+                    img={coronaCard.images.large}
+                    flipped={false}
+                  />
+                )}
+              </div>
             </div>
           ) : (
-            <div className="cards-row row-1">
-              {renderSlot(0, currentSeq[0])}
-            </div>
-          )}
+            <div className="cards-grid" ref={gridRef}>
+              {/* Row 1: Starting Cards or Selected First Card */}
+              {selectedSequenceIndex === null ? (
+                <div className="cards-row row-1">
+                  {Array.from(new Set(SEQUENCES.map(seq => seq[0]))).map((cardNum, idx) => {
+                    const card = cards[cardNum - 1]
+                    if (!card) return null
+                    return (
+                      <div
+                        key={`start-${idx}`}
+                        className={`card-slot card-start-${cardNum}`}
+                        style={{ position: 'relative', zIndex: 1 }}
+                      >
+                        <CardProxy
+                          id={card.id}
+                          name={card.name}
+                          set={card.set}
+                          number={card.number}
+                          types={card.types}
+                          supertype={card.supertype}
+                          subtypes={card.subtypes}
+                          rarity={card.rarity}
+                          isReverse={card.isReverse}
+                          img={card.images.large}
+                          flipped={false}
+                          onCardClick={() => handleStartCardClick(cardNum)}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="cards-row row-1">
+                  {renderSlot(0, currentSeq[0])}
+                </div>
+              )}
 
-          {/* Row 2: Two Cards */}
-          {selectedSequenceIndex !== null && (
-            <div className="cards-row row-2">
-              {renderSlot(1, currentSeq[1], chosenBranch === 'right')}
-              {renderSlot(2, currentSeq[2], chosenBranch === 'left')}
+              {/* Row 2: Two Cards (seq[1] and seq[2]) */}
+              {selectedSequenceIndex !== null && currentSeq[1] !== undefined && currentSeq[2] !== undefined && (
+                <div className="cards-row row-2">
+                  {renderSlot(1, isLeftFirst ? currentSeq[1] : currentSeq[2])}
+                  {renderSlot(2, isLeftFirst ? currentSeq[2] : currentSeq[1])}
+                </div>
+              )}
             </div>
           )}
+        </section>
+      )}
 
-          {/* Row 3: Branch final card */}
-          {selectedSequenceIndex !== null && chosenBranch !== null && (
-            <div className="cards-row row-3">
-              {chosenBranch === 'left' && renderSlot(3, currentSeq[3])}
-              {chosenBranch === 'right' && renderSlot(3, currentSeq[4])}
-            </div>
-          )}
-        </div>
-      </section>
+      {/* Footer / Audio Reminder */}
+      <footer className="footer-note">
+        <p>Encendé tus sonido 🔊</p>
+      </footer>
     </main>
   )
 }
