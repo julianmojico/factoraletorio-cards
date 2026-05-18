@@ -100,14 +100,10 @@
   <!-- ── Hero ── -->
   <header class="hero-section">
     <div class="logo-container">
-      <img
-        src="thumb.png"
-        alt="Logo Factor Aleatorio"
-        class="logo-img"
-      />
+      <img src="thumb.png" alt="Logo Factor Aleatorio" class="logo-img" />
     </div>
 
-    <h1 class="main-title">Llegó la hora.</h1>
+    <h1 class="main-title">Pedí ayuda al Oráculo. O no.</h1>
 
     <!-- <p class="main-subtitle"></p> -->
 
