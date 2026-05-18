@@ -87,7 +87,7 @@ export default function App() {
   function handleReveal() {
     playSequenceStartSound()
     setStage(1)
-    
+
     const currentSeq = SEQUENCES[sequenceIndex]
     const firstCardIndex = currentSeq[0] - 1
 
@@ -215,6 +215,7 @@ export default function App() {
     }
   }
 
+  const currentSeq = SEQUENCES[sequenceIndex]
   const btnLabel = isLoading ? 'Cargando...' : stage > 0 ? '¡Éstas son tus cartas!' : 'Revela tus cartas.'
 
   return (
@@ -244,8 +245,11 @@ export default function App() {
         style={{ visibility: stage > 0 ? 'visible' : 'hidden', height: stage > 0 ? 'auto' : 0, overflow: stage > 0 ? 'visible' : 'hidden' }}
       >
         <div className="cards-grid" ref={gridRef}>
-          {cards.map((card, i) =>
-            cardStates[i]?.revealed ? (
+          {currentSeq.map((cardNum) => {
+            const i = cardNum - 1
+            const card = cards[i]
+            if (!card || !cardStates[i]?.revealed) return null
+            return (
               <div
                 key={card.id}
                 className={`card-slot card-slot-${i}`}
@@ -266,8 +270,8 @@ export default function App() {
                   onCardClick={() => handleCardClick(i)}
                 />
               </div>
-            ) : null
-          )}
+            )
+          })}
         </div>
       </section>
     </main>
