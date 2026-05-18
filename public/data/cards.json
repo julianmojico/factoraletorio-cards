@@ -16,5 +16,60 @@
       "small": "/img/Carta1_frente.png",
       "large": "/img/Carta1_frente4x_.png"
     }
+  },
+  {
+    "id": "swsh12pt5-160-b",
+    "set": "swsh12pt5",
+    "name": "Pikachu",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "Basic"
+    ],
+    "types": [
+      "Lightning"
+    ],
+    "number": "160",
+    "rarity": "Rare Holo",
+    "isReverse": true,
+    "images": {
+      "small": "/img/Carta1_frente.png",
+      "large": "/img/Carta1_frente4x_.png"
+    }
+  },
+  {
+    "id": "swsh12pt5-160-c",
+    "set": "swsh12pt5",
+    "name": "Pikachu",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "Basic"
+    ],
+    "types": [
+      "Lightning"
+    ],
+    "number": "160",
+    "rarity": "Rare Rainbow",
+    "images": {
+      "small": "/img/Carta1_frente.png",
+      "large": "/img/Carta1_frente4x_.png"
+    }
+  },
+  {
+    "id": "swsh12pt5-160-d",
+    "set": "swsh12pt5",
+    "name": "Pikachu",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "Basic"
+    ],
+    "types": [
+      "Lightning"
+    ],
+    "number": "160",
+    "rarity": "Rare Ultra",
+    "images": {
+      "small": "/img/Carta1_frente.png",
+      "large": "/img/Carta1_frente4x_.png"
+    }
   }
 ]
