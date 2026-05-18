@@ -47,20 +47,26 @@ function launchConfetti() {
   draw()
 }
 
-// ── Sequence states ─────────────────────────────────────────────────────────
-// stage 0 → hidden
-// stage 1 → Carta 1 visible (flipped / face-down)
-// stage 2 → All 3+ cards visible (Carta 2 & 3 also face-down)
-// stage 3 → fly-out animation triggered
+// Configurable sequences of cards (1-based indices matching cards.json elements)
+const SEQUENCES = [
+  [1, 2, 3, 4],
+  [4, 3, 2, 1]
+]
 
 export default function App() {
   const [cards, setCards] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [stage, setStage] = useState(0)
-  const [cardStates, setCardStates] = useState([])   // [{revealed, flipped}]
+  const [stage, setStage] = useState(0) // 0 -> idle, 1 -> playing
+  const [cardStates, setCardStates] = useState([]) // [{revealed, flipped}]
+
+  // Sequence state
+  const [sequenceIndex, setSequenceIndex] = useState(0)
+  const [currentStep, setCurrentStep] = useState(0)
+
   const sectionRef = useRef(null)
   const gridRef = useRef(null)
 
+  // Fetch cards data once
   useEffect(() => {
     fetch('/data/cards.json')
       .then(r => r.json())
@@ -71,22 +77,29 @@ export default function App() {
       })
   }, [])
 
-  // ── Button: reveal first card ──────────────────────────────────────────────
+  // ── Button: reveal first card of the active sequence ────────────────────────
   function handleReveal() {
     setStage(1)
+    
+    const currentSeq = SEQUENCES[sequenceIndex]
+    const firstCardIndex = currentSeq[0] - 1
+
     setCardStates(prev => {
-      const next = [...prev]
-      next[0] = { ...next[0], revealed: true }
+      const next = prev.map((cs, idx) =>
+        idx === firstCardIndex ? { revealed: true, flipped: true } : { revealed: false, flipped: true }
+      )
       return next
     })
 
-    // Animate section into view with GSAP
+    // Animate cards section into view
     requestAnimationFrame(() => {
       if (sectionRef.current) {
         gsap.fromTo(sectionRef.current,
           { autoAlpha: 0, y: 40 },
-          { autoAlpha: 1, y: 0, duration: 0.7, ease: 'power3.out',
-            onComplete: () => sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }
+          {
+            autoAlpha: 1, y: 0, duration: 0.7, ease: 'power3.out',
+            onComplete: () => sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
         )
       }
     })
@@ -94,60 +107,56 @@ export default function App() {
 
   // ── Card click handler (per-card) ──────────────────────────────────────────
   function handleCardClick(i) {
-    // Stage 1: only card 0 is visible and flipped
-    if (stage === 1 && i === 0 && cardStates[0]?.flipped) {
-      // Flip card 0 face-up
+    const currentSeq = SEQUENCES[sequenceIndex]
+    const activeCardIndex = currentSeq[currentStep] - 1
+
+    // Progression only occurs if user clicks the next face-down card in sequence
+    if (i === activeCardIndex && cardStates[i]?.flipped) {
+      // 1. Flip card face-up
       setCardStates(prev => {
         const next = [...prev]
-        next[0] = { ...next[0], flipped: false }
+        next[i] = { ...next[i], flipped: false }
         return next
       })
-      // After flip animation, reveal remaining cards
-      setTimeout(() => {
-        setStage(2)
-        setCardStates(prev => {
-          const next = prev.map((cs, idx) =>
-            idx > 0 ? { ...cs, revealed: true } : cs
-          )
-          return next
-        })
-        launchConfetti()
-        // GSAP staggered entrance for the new cards
-        requestAnimationFrame(() => {
-          const slots = gridRef.current?.querySelectorAll('.card-slot:not(.card-slot-0)')
-          if (slots?.length) {
-            gsap.fromTo(slots,
-              { autoAlpha: 0, y: 50, scale: 0.92 },
-              { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.12, ease: 'back.out(1.4)' }
-            )
-          }
-        })
-      }, 700)
-      return
-    }
 
-    // Stage 2+: clicking card 1 or 2
-    if (stage >= 2 && i >= 1) {
-      const cs = cardStates[i]
-      if (cs.flipped) {
-        // Flip face-up
-        setCardStates(prev => {
-          const next = [...prev]
-          next[i] = { ...next[i], flipped: false }
-          return next
-        })
+      const isLastStep = currentStep === currentSeq.length - 1
+
+      if (!isLastStep) {
+        // 2a. Progression step: reveal next card in sequence after a short delay
+        setTimeout(() => {
+          const nextStep = currentStep + 1
+          const nextCardIndex = currentSeq[nextStep] - 1
+
+          setCurrentStep(nextStep)
+          setCardStates(prev => {
+            const next = [...prev]
+            next[nextCardIndex] = { revealed: true, flipped: true }
+            return next
+          })
+
+          // Staggered entry animation for the new slot
+          requestAnimationFrame(() => {
+            const slot = gridRef.current?.querySelector(`.card-slot-${nextCardIndex}`)
+            if (slot) {
+              gsap.fromTo(slot,
+                { autoAlpha: 0, y: 50, scale: 0.92 },
+                { autoAlpha: 1, y: 0, scale: 1, duration: 1.2, ease: 'back.out(0.8)' }
+              )
+            }
+          })
+        }, 700)
       } else {
-        // Second click → trigger fly-out
-        triggerFlyOut()
+        // 2b. Sequence finalization: launch confetti & transition to next sequence
+        launchConfetti()
+        setTimeout(() => {
+          triggerFlyOutAndNextSequence()
+        }, 1500)
       }
     }
   }
 
-  // ── Fly-out animation (anim1) ──────────────────────────────────────────────
-  function triggerFlyOut() {
-    if (stage === 3) return
-    setStage(3)
-    launchConfetti()
+  // ── Fly-out transition to the next sequence ────────────────────────────────
+  function triggerFlyOutAndNextSequence() {
     if (gridRef.current) {
       gsap.to(gridRef.current, {
         y: -window.innerHeight * 1.5,
@@ -157,6 +166,41 @@ export default function App() {
         duration: 1.4,
         ease: 'power3.in',
         pointerEvents: 'none',
+        onComplete: () => {
+          // Advance sequence index
+          const nextSeqIndex = (sequenceIndex + 1) % SEQUENCES.length
+          setSequenceIndex(nextSeqIndex)
+          setCurrentStep(0)
+
+          const nextSeq = SEQUENCES[nextSeqIndex]
+          const firstCardIndex = nextSeq[0] - 1
+
+          // Initialize states so only the first card of the new sequence is visible
+          setCardStates(cards.map((_, idx) => ({
+            revealed: idx === firstCardIndex,
+            flipped: true,
+          })))
+
+          // Reset grid properties
+          gsap.set(gridRef.current, {
+            y: 0,
+            scale: 1,
+            rotation: 0,
+            opacity: 1,
+            pointerEvents: 'auto',
+          })
+
+          // Staggered entry animation for the new sequence's first card slot
+          requestAnimationFrame(() => {
+            const slot = gridRef.current?.querySelector(`.card-slot-${firstCardIndex}`)
+            if (slot) {
+              gsap.fromTo(slot,
+                { autoAlpha: 0, y: 50, scale: 0.92 },
+                { autoAlpha: 1, y: 0, scale: 1, duration: 1.2, ease: 'back.out(0.8)' }
+              )
+            }
+          })
+        }
       })
     }
   }
