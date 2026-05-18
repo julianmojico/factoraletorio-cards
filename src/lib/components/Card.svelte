@@ -180,7 +180,7 @@
       // @ts-ignore
       gtag("event", "select_item", {
         item_list_id: "cards_list",
-        item_list_name: "Pokemon Cards",
+        item_list_name: "Cartas Factor Aleatorio",
         items: [
           {
             item_id: id,
@@ -447,13 +447,13 @@
       on:pointermove={interact}
       on:mouseout={interactEnd}
       on:blur={deactivate}
-      aria-label="Expand the Pokemon Card; {name}."
+      aria-label="Expandir la carta de Factor Aleatorio; {name}."
       tabindex="0"
     >
       <img
         class="card__back"
         src={back_img}
-        alt="The back of a Pokemon Card, a Pokeball in the center with Pokemon logo above and below"
+        alt="Dorso de una carta de Factor Aleatorio"
         loading="lazy"
         width="660"
         height="921"
@@ -461,7 +461,7 @@
       <div class="card__front" style={staticStyles + foilStyles}>
         <img
           src={front_img}
-          alt="Front design of the {name} Pokemon Card, with the stats and info around the edge"
+          alt="Diseño frontal de la carta de Factor Aleatorio {name}"
           on:load={imageLoader}
           loading="lazy"
           width="660"

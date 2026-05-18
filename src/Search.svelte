@@ -77,7 +77,7 @@
 
 <section class="search-area">
 
-  <input type="search" name="search" id="search" bind:value={query} placeholder="eg: Morpeko or Marnie" />
+  <input type="search" name="search" id="search" bind:value={query} placeholder="ej: Pikachu..." />
 
   <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.25" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -88,11 +88,11 @@
 </section>
 
 {#if !query}
-  <h3>Browse cards below, Or search for your favourite!</h3>
+  <h3>¡Explora las cartas abajo, o busca tu favorita!</h3>
 {/if}
 
 {#if usableQuery && loadingQuery}
-  <h3>Fetching Cards...</h3>
+  <h3>Buscando cartas...</h3>
 {/if}
 
 {#if usableQuery && queryResult.length}
@@ -115,7 +115,7 @@
 
 {#if isError || ( usableQuery && !loadingQuery && !queryResult.length )}
 
-  <h3>Error: No cards found with that name.</h3>
+  <h3>Error: No se encontraron cartas con ese nombre.</h3>
 
   <CardList>
     <Card 
