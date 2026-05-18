@@ -89,20 +89,21 @@ body {
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 760px;
+  max-width: 1100px;
 }
 
 .cards-grid {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
-  gap: 300px 120px;
+  gap: 24px;
   padding: 8px 0;
+  width: 100%;
 }
 
 .card-slot {
-  flex: 0 0 calc(50% - 10px);
-  max-width: 320px;
+  flex: 0 1 240px;
+  max-width: 240px;
   display: flex;
   justify-content: center;
   position: relative;
@@ -112,5 +113,11 @@ body {
 .card-slot.slot-active { z-index: 100; }
 
 @media (max-width: 600px) {
-  .card-slot { flex: 0 0 100%; max-width: 340px; }
+  .cards-grid {
+    gap: 12px;
+  }
+  .card-slot {
+    flex: 0 1 160px;
+    max-width: 160px;
+  }
 }

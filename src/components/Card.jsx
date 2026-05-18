@@ -43,6 +43,7 @@ export default function Card({
   })
   const tweenRef = useRef(null)
   const rafRef = useRef(null)
+  const isMountedRef = useRef(false)
 
   const [isActive, setIsActive] = useState(false)
   const [isInteracting, setIsInteracting] = useState(false)
@@ -165,6 +166,14 @@ export default function Card({
 
   // ── Animate flip when `flipped` prop changes ───────────────────────────────
   useEffect(() => {
+    if (isMountedRef.current) {
+      const audio = new Audio('/click.mp3')
+      audio.volume = 0.4
+      audio.play().catch(err => console.warn('Audio playback blocked or failed:', err))
+    } else {
+      isMountedRef.current = true
+    }
+
     if (tweenRef.current) tweenRef.current.kill()
     tweenRef.current = gsap.to(varsRef.current, {
       rotX: flipped ? 180 : 0,

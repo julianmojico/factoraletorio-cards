@@ -53,6 +53,12 @@ const SEQUENCES = [
   [4, 3, 2, 1]
 ]
 
+function playSequenceStartSound() {
+  const audio = new Audio('/woosh.mp3')
+  audio.volume = 0.45
+  audio.play().catch(err => console.warn('Audio playback blocked or failed:', err))
+}
+
 export default function App() {
   const [cards, setCards] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -79,6 +85,7 @@ export default function App() {
 
   // ── Button: reveal first card of the active sequence ────────────────────────
   function handleReveal() {
+    playSequenceStartSound()
     setStage(1)
     
     const currentSeq = SEQUENCES[sequenceIndex]
@@ -167,6 +174,9 @@ export default function App() {
         ease: 'power3.in',
         pointerEvents: 'none',
         onComplete: () => {
+          // Play sequence start sound for the new sequence!
+          playSequenceStartSound()
+
           // Advance sequence index
           const nextSeqIndex = (sequenceIndex + 1) % SEQUENCES.length
           setSequenceIndex(nextSeqIndex)
