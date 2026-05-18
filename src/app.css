@@ -120,6 +120,27 @@ body {
 /* Elevate the active slot above siblings */
 .card-slot.slot-active { z-index: 100; }
 
+.card-slot.is-unchosen {
+  filter: grayscale(100%);
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: not-allowed;
+  transition: all 0.5s ease;
+}
+
+.card-slot.is-unchosen::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 18px; /* Perfectly matching the Pokecard border-radius */
+  pointer-events: none;
+  z-index: 10;
+}
+
 @media (max-width: 600px) {
   .cards-grid {
     gap: 20px;
