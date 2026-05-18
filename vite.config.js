@@ -1,29 +1,22 @@
 import { defineConfig, loadEnv } from 'vite'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
+import react from '@vitejs/plugin-react'
 
-// https://vitejs.dev/config/
-export default defineConfig(({mode}) => {
-
+export default defineConfig(({ mode }) => {
   const venv = loadEnv(mode, process.cwd(), '')
-  const env = Object.keys(venv).filter((item) => item.startsWith("VITE_")).reduce((cur, key) => { return Object.assign(cur, { [key]: venv[key] })}, {}) ;
-
-  const htmlPlugin = () => {
-    return {
-      name: "html-transform",
-      transformIndexHtml(html) {
-        return html.replace(/%(.*?)%/g, function (match, p1) {
-          return env[p1];
-        });
-      },
-    };
-  };
+  const env = Object.keys(venv)
+    .filter((k) => k.startsWith('VITE_'))
+    .reduce((cur, k) => ({ ...cur, [k]: venv[k] }), {})
 
   return {
-    plugins: [svelte(), htmlPlugin()],
-    server: {
-      watch: {
-        usePolling: false
-      }
-    }
+    plugins: [
+      react(),
+      {
+        name: 'html-transform',
+        transformIndexHtml(html) {
+          return html.replace(/%(.*?)%/g, (_, p1) => env[p1] ?? '')
+        },
+      },
+    ],
+    server: { watch: { usePolling: false } },
   }
-});
+})

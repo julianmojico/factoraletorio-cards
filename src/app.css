@@ -1,0 +1,116 @@
+/* ── Reset & global ──────────────────────────────────────────── */
+body {
+  margin: 0;
+  background-color: #0c0b0e;
+  background-image:
+    radial-gradient(circle at 10% 85%, rgba(186,12,120,.38) 0%, transparent 50%),
+    radial-gradient(circle at 90% 25%, rgba(210,82,10,.28) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(25,20,30,.95) 0%, #070608 100%);
+  background-attachment: fixed;
+  font-family: 'Outfit', sans-serif;
+  overflow-x: hidden;
+}
+
+/* ── Layout ──────────────────────────────────────────────────── */
+.page-container {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px 80px;
+  box-sizing: border-box;
+}
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  opacity: .055;
+  pointer-events: none;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero-section {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 680px;
+  width: 100%;
+  margin-bottom: 48px;
+}
+
+.logo-container { margin-bottom: 24px; }
+.logo-img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  transition: transform .5s cubic-bezier(.175,.885,.32,1.275);
+}
+.logo-img:hover { transform: scale(1.08); }
+
+.main-title {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 16px;
+  letter-spacing: -.02em;
+}
+
+/* ── Button ──────────────────────────────────────────────────── */
+.gradient-btn {
+  padding: 14px 36px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  background-image: linear-gradient(to right, #c92e24, #ed6223, #d51085);
+  box-shadow: 0 4px 20px rgba(237,98,35,.25);
+  transition: transform .2s ease, filter .2s ease, box-shadow .2s ease;
+}
+.gradient-btn:hover:not(:disabled) {
+  transform: scale(1.04);
+  filter: brightness(1.12);
+  box-shadow: 0 6px 28px rgba(237,98,35,.4);
+}
+.gradient-btn:active:not(:disabled) { transform: scale(.97); }
+.gradient-btn:disabled { opacity: .7; cursor: default; }
+
+/* ── Cards grid ──────────────────────────────────────────────── */
+.cards-section {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 760px;
+}
+
+.cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 300px 120px;
+  padding: 8px 0;
+}
+
+.card-slot {
+  flex: 0 0 calc(50% - 10px);
+  max-width: 320px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+/* Elevate the active slot above siblings */
+.card-slot.slot-active { z-index: 100; }
+
+@media (max-width: 600px) {
+  .card-slot { flex: 0 0 100%; max-width: 340px; }
+}
