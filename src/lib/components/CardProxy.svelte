@@ -233,8 +233,6 @@
         }
       }
     }
-
-    return `${server}/foils/${fSet}/${type}/upscaled/${fNumber}_foil_${etch}_${style}_2x.${ext}`;
   }
 
   function foilImage() {

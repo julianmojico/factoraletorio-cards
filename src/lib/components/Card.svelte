@@ -17,7 +17,7 @@
 
   // image props
   export let img = "";
-  export let back = "/img/Dorso4x_.png";
+  export let back = "/img/Dorso.png";
   export let foil = "";
   export let mask = "";
 

@@ -1,10 +1,12 @@
 <script>
   import { onMount, tick } from "svelte";
   import Card from "./lib/components/CardProxy.svelte";
+  import { activeCard } from "./lib/stores/activeCard.js";
 
   let cards = [];
   let isLoading = true;
   let revealed = false;
+  let slotRefs = [];
   let cardsSection;
 
   // ── Confetti ────────────────────────────────────────────────────────────────
@@ -99,7 +101,7 @@
   <header class="hero-section">
     <div class="logo-container">
       <img
-        src="https://factoraleatorio.com/assets/Logo%20Component.png"
+        src="thumb.png"
         alt="Logo Factor Aleatorio"
         class="logo-img"
       />
@@ -131,7 +133,12 @@
     {#if !isLoading}
       <div class="cards-grid">
         {#each cards as card, i}
-          <div class="card-slot" style="--delay: {i * 120}ms">
+          <div
+            class="card-slot"
+            class:slot-active={slotRefs[i] && slotRefs[i].contains($activeCard)}
+            style="--delay: {i * 120}ms"
+            bind:this={slotRefs[i]}
+          >
             <Card
               id={card.id}
               name={card.name}
@@ -310,9 +317,20 @@
     display: flex;
     justify-content: center;
 
+    /* Needed so z-index works relative to sibling slots */
+    position: relative;
+    z-index: 1;
+
     /* Slide-up + fade-in on reveal */
     opacity: 0;
     transform: translateY(48px);
+
+    transition: z-index 0s;
+  }
+
+  /* Elevate the slot whose card is currently active */
+  .card-slot.slot-active {
+    z-index: 100;
   }
 
   /* When parent is revealed, animate each slot with a staggered delay */
