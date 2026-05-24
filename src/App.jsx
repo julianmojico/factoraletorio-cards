@@ -95,9 +95,39 @@ export default function App() {
   const [selectedSequenceIndex, setSelectedSequenceIndex] = useState(null)
   const [currentStep, setCurrentStep] = useState(0)
   const [isVictorious, setIsVictorious] = useState(false)
+  const [showRankingOverlay, setShowRankingOverlay] = useState(false)
+  const [showNameOverlay, setShowNameOverlay] = useState(false)
+  const [rankingEntries, setRankingEntries] = useState([])
+  const [playerName, setPlayerName] = useState('')
 
   const sectionRef = useRef(null)
   const gridRef = useRef(null)
+
+  const RANKING_NAMES = ['NEON', 'PIXEL', 'LUNA', 'SYN', 'VIBE', 'TRON', 'CANDY', 'KAOS', 'NOVA', 'OMA', 'JINX']
+
+  const generateRankingEntries = () => {
+    const shuffled = [...RANKING_NAMES].sort(() => Math.random() - 0.5)
+    return Array.from({ length: 5 }, (_, idx) => {
+      const nickname = `${shuffled[idx]}${Math.floor(Math.random() * 90 + 10)}`
+      const time = `${Math.floor(Math.random() * 2) + 1}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`
+      return { pos: idx + 1, nickname, time }
+    })
+  }
+
+  useEffect(() => {
+    if (!isVictorious) return
+
+    setRankingEntries(generateRankingEntries())
+    setShowRankingOverlay(true)
+    setPlayerName('')
+    setShowNameOverlay(false)
+
+    const nameTimer = window.setTimeout(() => {
+      setShowNameOverlay(true)
+    }, 850)
+
+    return () => window.clearTimeout(nameTimer)
+  }, [isVictorious])
 
   // Fetch cards data once
   useEffect(() => {
@@ -273,10 +303,25 @@ export default function App() {
 
   function handleReset() {
     setIsVictorious(false)
+    setShowRankingOverlay(false)
+    setShowNameOverlay(false)
+    setRankingEntries([])
+    setPlayerName('')
     setStage(0)
     setSelectedSequenceIndex(null)
     setCurrentStep(0)
     setSlotStates(['hidden', 'hidden', 'hidden'])
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function handleNameChange(value) {
+    const sanitized = value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3)
+    setPlayerName(sanitized)
+  }
+
+  function handleNameSubmit() {
+    if (!playerName.trim()) return
+    handleReset()
   }
 
   const currentSeq = selectedSequenceIndex !== null ? SEQUENCES[selectedSequenceIndex] : null
@@ -418,6 +463,47 @@ export default function App() {
             </div>
           )}
         </section>
+      )}
+
+      {showRankingOverlay && (
+        <div className="retro-overlay retro-overlay-ranking">
+          <div className="retro-card retro-card-ranking">
+            <div className="retro-card-header">
+              <span className="retro-badge">RANKING</span>
+              <h2>TOP JUGADORES</h2>
+            </div>
+            <div className="ranking-list">
+              {rankingEntries.map(entry => (
+                <div key={entry.pos} className="ranking-row">
+                  <span className="position">#{entry.pos}</span>
+                  <span className="nickname">{entry.nickname}</span>
+                  <span className="time">{entry.time}</span>
+                </div>
+              ))}
+            </div>
+            <p className="retro-note">Pulsa ENTER en el cuadro para guardar tu nombre y volver al inicio.</p>
+          </div>
+        </div>
+      )}
+
+      {showNameOverlay && (
+        <div className="retro-overlay retro-overlay-input">
+          <div className="retro-card retro-card-input">
+            <h3>INGRESA TU TAG</h3>
+            <p>Máximo 3 letras</p>
+            <input
+              value={playerName}
+              maxLength={3}
+              onChange={e => handleNameChange(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleNameSubmit()}
+              placeholder="AAA"
+              aria-label="Nombre de jugador"
+            />
+            <button className="gradient-btn" type="button" onClick={handleNameSubmit} disabled={!playerName.trim()}>
+              CONFIRMAR
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Footer / Audio Reminder */}

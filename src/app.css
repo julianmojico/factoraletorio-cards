@@ -187,3 +187,166 @@ body {
   z-index: 50;
   pointer-events: none;
 }
+
+.retro-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(5, 5, 12, 0.88);
+  backdrop-filter: blur(10px);
+  z-index: 9998;
+}
+
+.retro-card {
+  min-width: 320px;
+  max-width: 520px;
+  width: 100%;
+  padding: 26px 28px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(24, 14, 43, 0.95), rgba(13, 6, 27, 0.92));
+  box-shadow: 0 28px 80px rgba(13, 0, 35, 0.36), inset 0 0 1px rgba(255, 255, 255, 0.08);
+  color: #fff;
+  text-align: center;
+  position: relative;
+}
+
+.retro-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(255, 20, 147, 0.22), transparent 35%, rgba(45, 32, 255, 0.18));
+  pointer-events: none;
+}
+
+.retro-card-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.retro-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ff80dc;
+  letter-spacing: 0.18em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.retro-card h2,
+.retro-card h3 {
+  margin: 0;
+  color: #f7f1ff;
+  text-shadow: 0 0 18px rgba(255, 0, 255, 0.3);
+}
+
+.retro-card h2 {
+  font-size: clamp(1.5rem, 2.5vw, 2.1rem);
+}
+
+.retro-card h3 {
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+}
+
+.ranking-list {
+  margin: 20px 0 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f8f7ff;
+}
+
+.ranking-row .position {
+  font-weight: 800;
+  color: #ffb7ff;
+}
+
+.ranking-row .nickname {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ranking-row .time {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.retro-note {
+  margin: 0;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.04em;
+}
+
+.retro-card-input {
+  min-width: 280px;
+  max-width: 420px;
+  padding: 28px 26px;
+}
+
+.retro-card-input p {
+  margin: 10px 0 20px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.retro-card-input input {
+  width: 100%;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(8, 4, 20, 0.92);
+  color: #fff;
+  font-size: 1.4rem;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.retro-card-input input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.retro-card-ranking,
+.retro-card-input {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 520px) {
+  .retro-card {
+    border-radius: 22px;
+    padding: 22px;
+  }
+
+  .ranking-row {
+    grid-template-columns: 48px 1fr auto;
+    padding: 12px 14px;
+  }
+}
